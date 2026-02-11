@@ -7,5 +7,5 @@ Route::get('/', function () {
 });
 
 Route::get('preferred-bonus', function () {
-    return 'Ullu bnaya';
+    return '<h1>Ullu bnaya<h1>';
 });
