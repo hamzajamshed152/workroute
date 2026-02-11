@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TwilioCallController;
+use App\Http\Controllers\TwilioRecordingController;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+Route::post('/twilio/incoming-call', [TwilioCallController::class, 'handle']);
+Route::post('/twilio/recording', [TwilioRecordingController::class, 'recordingCallback']);
+
+
+Route::post('/twilio/fallback', function () {
+    $response = new \Twilio\TwiML\VoiceResponse();
+
+    $response->say(
+        'Sorry, the tradie is unavailable. I will take your job details.'
+    );
+
+    $gather = $response->gather([
+        'input' => 'speech',
+        'timeout' => 6,
+        'action' => '/twilio/recording',
+        'speechTimeout' => 'auto',
+    ]);
+
+    $gather->say('Please tell me your name, service needed, and location.');
+
+    $response->record([
+        'recordingStatusCallback' => '/twilio/recording',
+        'playBeep' => true,
+    ]);
+
+    return response($response)->header('Content-Type', 'text/xml');
+})->name('twilio.fallback');
+
