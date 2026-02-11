@@ -11,7 +11,7 @@ class TwilioCallController extends Controller
     {
         $response = new VoiceResponse();
 
-        $tradiePhone = '+614XXXXXXXX'; // fetch via virtual number mapping
+        $tradiePhone = '+923360131774';
 
         $dial = $response->dial('', [
             'timeout' => 15,
