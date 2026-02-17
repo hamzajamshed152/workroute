@@ -5,9 +5,22 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessRecordingJob;
 use Illuminate\Support\Facades\Log;
+use Twilio\TwiML\VoiceResponse;
 
 class TwilioRecordingController extends Controller
 {
+    // public function recordingCallback(Request $request)
+    // {
+    //     ProcessRecordingJob::dispatch(
+    //         $request->RecordingUrl,
+    //         $request->From
+    //     );
+
+    //     Log::info('Recording URL', [$request->RecordingUrl]);
+
+    //     return response('OK');
+    // }
+
     public function recordingCallback(Request $request)
     {
         ProcessRecordingJob::dispatch(
@@ -17,6 +30,11 @@ class TwilioRecordingController extends Controller
 
         Log::info('Recording URL', [$request->RecordingUrl]);
 
-        return response('OK');
+        $response = new VoiceResponse();
+        $response->say('Thank you. We have received your job details.');
+
+        return response($response, 200)
+            ->header('Content-Type', 'text/xml');
     }
+
 }
