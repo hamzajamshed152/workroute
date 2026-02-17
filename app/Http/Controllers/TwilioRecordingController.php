@@ -23,6 +23,11 @@ class TwilioRecordingController extends Controller
 
     public function recordingCallback(Request $request)
     {
+        $request->validate([
+            'RecordingUrl'  => 'required|string',
+            'From'  => 'required|string',
+        ]);
+
         ProcessRecordingJob::dispatch(
             $request->RecordingUrl,
             $request->From
