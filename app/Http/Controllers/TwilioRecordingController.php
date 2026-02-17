@@ -29,6 +29,9 @@ class TwilioRecordingController extends Controller
             'From'  => 'required|string',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()],422);
+        }
 
         ProcessRecordingJob::dispatch(
             $request->RecordingUrl,
