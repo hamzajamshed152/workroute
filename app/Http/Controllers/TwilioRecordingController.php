@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessRecordingJob;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Twilio\TwiML\VoiceResponse;
 
 class TwilioRecordingController extends Controller
@@ -23,10 +24,11 @@ class TwilioRecordingController extends Controller
 
     public function recordingCallback(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'RecordingUrl'  => 'required|string',
             'From'  => 'required|string',
         ]);
+
 
         ProcessRecordingJob::dispatch(
             $request->RecordingUrl,
