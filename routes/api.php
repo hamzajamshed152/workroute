@@ -10,7 +10,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/twilio/incoming-call', [TwilioCallController::class, 'handle']);
-Route::post('/twilio/recording', [TwilioRecordingController::class, 'recordingCallback']);
+Route::post('/twilio/recording', [TwilioRecordingController::class, 'recordingCallback'])->name('twilio.recording');
 
 
 Route::post('/twilio/fallback', function () {
@@ -23,14 +23,14 @@ Route::post('/twilio/fallback', function () {
     $gather = $response->gather([
         'input' => 'speech',
         'timeout' => 6,
-        'action' => '/twilio/recording',
+        'action' => route('twilio.recording'),
         'speechTimeout' => 'auto',
     ]);
 
     $gather->say('Please tell me your name, service needed, and location.');
 
     $response->record([
-        'recordingStatusCallback' => '/twilio/recording',
+        'recordingStatusCallback' => route('twilio.recording'),
         'playBeep' => true,
     ]);
 
