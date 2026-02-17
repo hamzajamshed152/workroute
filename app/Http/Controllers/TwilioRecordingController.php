@@ -10,18 +10,6 @@ use Twilio\TwiML\VoiceResponse;
 
 class TwilioRecordingController extends Controller
 {
-    // public function recordingCallback(Request $request)
-    // {
-    //     ProcessRecordingJob::dispatch(
-    //         $request->RecordingUrl,
-    //         $request->From
-    //     );
-
-    //     Log::info('Recording URL', [$request->RecordingUrl]);
-
-    //     return response('OK');
-    // }
-
     public function recordingCallback(Request $request)
     {
         $validator = Validator::make($request->all(), [

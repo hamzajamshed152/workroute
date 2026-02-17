@@ -11,10 +11,10 @@ class TwilioCallController extends Controller
     {
         $response = new VoiceResponse();
 
-        $tradiePhone = '+923324701243';
+        $tradiePhone = '+923060551335';
 
         $dial = $response->dial('', [
-            'timeout' => 15,
+            'timeout' => 5,
             'action' => route('twilio.fallback'),
         ]);
 
