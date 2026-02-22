@@ -25,7 +25,7 @@ class TwilioCallController extends Controller
 
         $dial->number($tradiePhone);
 
-        return response($response, 200)
+        return response($response, status: 200)
             ->header('Content-Type', 'text/xml');
     }
 }

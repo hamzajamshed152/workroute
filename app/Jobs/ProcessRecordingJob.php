@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\JobWork;
+use App\Models\Tradie;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use OpenAI;
@@ -18,7 +19,17 @@ class ProcessRecordingJob implements ShouldQueue
 
     public function handle()
     {
-        $audio = file_get_contents($this->recordingUrl);
+        $audio = file_get_contents(
+            $this->recordingUrl . '.wav',
+            false,
+            stream_context_create([
+                'http' => [
+                    'header' => 'Authorization: Basic ' . base64_encode(
+                        config('services.twilio.sid') . ':' . config('services.twilio.token')
+                    )
+                ]
+            ])
+        );
 
         $client = OpenAI::client(config('services.openai.key'));
 
@@ -48,8 +59,11 @@ class ProcessRecordingJob implements ShouldQueue
             true
         );
 
+        $tradie = Tradie::where('id',1)->first();
+
         // 3️⃣ Job Creation
         JobWork::create([
+            'tradie_id' => $tradie->id,
             'customer_name' => $data['name'] ?? null,
             'customer_phone' => $this->from,
             'service_type' => $data['service'] ?? null,

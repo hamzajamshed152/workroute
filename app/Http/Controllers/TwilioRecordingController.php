@@ -35,8 +35,9 @@ class TwilioRecordingController extends Controller
         $response = new VoiceResponse();
         $response->say('Thank you. We have received your job details.');
 
-        return response($response, 200)
-            ->header('Content-Type', 'text/xml');
+        // return response($response, 200)
+        //     ->header('Content-Type', 'text/xml');
+        return response()->json(['status' => 'ok']);
     }
 
 }

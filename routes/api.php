@@ -48,15 +48,17 @@ Route::post('/twilio/fallback', function (Request $request) {
         );
 
         $response->record([
-            'maxLength' => 60,
+            'maxLength' => 35,
+            'timeout' => 5, // stop after 5 sec silence
             'playBeep' => true,
             'recordingStatusCallback' => route('twilio.recording'),
         ]);
 
+        $response->say('Thank you. We have received your job details.');
         $response->hangup();
     }
 
-    return response($response)->header('Content-Type', 'text/xml');
+    return response($response, 200)->header('Content-Type', 'text/xml');
 })->name('twilio.fallback');
 
 
