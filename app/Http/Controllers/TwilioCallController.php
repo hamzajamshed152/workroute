@@ -22,6 +22,7 @@ class TwilioCallController extends Controller
             'action' => route('twilio.fallback'),
             'method' => 'POST'
         ]);
+        
 
         $dial->number($tradiePhone);
 
