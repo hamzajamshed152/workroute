@@ -14,16 +14,20 @@ class TwilioRecordingController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'RecordingUrl'  => 'required|string',
-            'From'  => 'required|string',
+            // 'From'  => 'required|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors()->first()],422);
         }
 
+        // ProcessRecordingJob::dispatch(
+        //     $request->RecordingUrl,
+        //     $request->From
+        // );
         ProcessRecordingJob::dispatch(
             $request->RecordingUrl,
-            $request->From
+            $request->CallSid // use CallSid instead
         );
 
         Log::info('Recording URL', [$request->RecordingUrl]);
