@@ -13,27 +13,50 @@ Route::post('/twilio/incoming-call', [TwilioCallController::class, 'handle']);
 Route::post('/twilio/recording', [TwilioRecordingController::class, 'recordingCallback'])->name('twilio.recording');
 
 
-Route::post('/twilio/fallback', function () {
+// Route::post('/twilio/fallback', function () {
+//     $response = new \Twilio\TwiML\VoiceResponse();
+
+//     $response->say(
+//         'Sorry, the tradie is unavailable. I will take your job details.'
+//     );
+
+//     $gather = $response->gather([
+//         'input' => 'speech',
+//         'timeout' => 6,
+//         'action' => route('twilio.recording'),
+//         'speechTimeout' => 'auto',
+//     ]);
+
+//     $gather->say('Please tell me your name, service needed, and location.');
+
+//     $response->record([
+//         'recordingStatusCallback' => route('twilio.recording'),
+//         'playBeep' => true,
+//     ]);
+
+//     return response($response)->header('Content-Type', 'text/xml');
+// })->name('twilio.fallback');
+Route::post('/twilio/fallback', function (Request $request) {
+
     $response = new \Twilio\TwiML\VoiceResponse();
 
-    $response->say(
-        'Sorry, the tradie is unavailable. I will take your job details.'
-    );
+    // Only trigger fallback if call was NOT answered
+    if ($request->DialCallStatus !== 'completed') {
 
-    $gather = $response->gather([
-        'input' => 'speech',
-        'timeout' => 6,
-        'action' => route('twilio.recording'),
-        'speechTimeout' => 'auto',
-    ]);
+        $response->say(
+            'Sorry, the tradie is unavailable. Please leave your name, service needed, and location after the beep.'
+        );
 
-    $gather->say('Please tell me your name, service needed, and location.');
+        $response->record([
+            'maxLength' => 60,
+            'playBeep' => true,
+            'recordingStatusCallback' => route('twilio.recording'),
+        ]);
 
-    $response->record([
-        'recordingStatusCallback' => route('twilio.recording'),
-        'playBeep' => true,
-    ]);
+        $response->hangup();
+    }
 
     return response($response)->header('Content-Type', 'text/xml');
 })->name('twilio.fallback');
+
 

@@ -18,7 +18,7 @@ class ProcessRecordingJob implements ShouldQueue
 
     public function handle()
     {
-        $audio = file_get_contents($this->recordingUrl . '.wav');
+        $audio = file_get_contents($this->recordingUrl);
 
         $client = OpenAI::client(config('services.openai.key'));
 
