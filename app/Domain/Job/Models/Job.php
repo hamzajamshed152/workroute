@@ -12,9 +12,10 @@ class Job extends Model
 {
     use HasUuids;
 
+    public $table = 'service_jobs';
+
     protected $fillable = [
         'id',
-        'tenant_id',
         'call_id',
         'tradie_id',
         'status',           // pending | assigned | ai_created | in_progress | completed | cancelled

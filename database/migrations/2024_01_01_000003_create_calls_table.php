@@ -10,8 +10,8 @@ return new class extends Migration {
     {
         Schema::create('calls', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants');
-            $table->foreignUuid('tradie_id')->nullable()->constrained('tradies')->nullOnDelete();
+            $table->uuid('tradie_id')->nullable();  // was tenant_id
+            $table->foreign('tradie_id')->references('id')->on('tradies');
             $table->string('twilio_call_sid')->unique();  // Idempotency key — Twilio retries use the same SID
             $table->string('caller_number');
             $table->string('called_number');
@@ -27,7 +27,7 @@ return new class extends Migration {
             $table->timestamp('ended_at')->nullable();
             $table->timestamps();
 
-            $table->index(['tenant_id', 'created_at']);
+            $table->index(['tradie_id', 'created_at']);
         });
     }
 

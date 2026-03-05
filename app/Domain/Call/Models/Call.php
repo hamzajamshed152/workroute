@@ -14,7 +14,6 @@ class Call extends Model
 
     protected $fillable = [
         'id',
-        'tenant_id',
         'tradie_id',
         'twilio_call_sid',           // Twilio's unique call identifier — used for deduplication
         'caller_number',

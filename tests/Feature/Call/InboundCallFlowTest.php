@@ -8,7 +8,6 @@ use App\Domain\Call\Contracts\CallProviderInterface;
 use App\Domain\Call\DTOs\IncomingCallData;
 use App\Domain\Call\DTOs\TwimlResponse;
 use App\Domain\Tradie\Models\Tradie;
-use App\Domain\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -17,17 +16,13 @@ class InboundCallFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Tenant $tenant;
     private Tradie $tradie;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->tenant = Tenant::factory()->create(['subscription_status' => 'active']);
-
         $this->tradie = Tradie::factory()->create([
-            'tenant_id'       => $this->tenant->id,
             'business_number' => '+61298765432',
             'personal_phone'  => '+61412345678',
             'retell_agent_id' => 'agent_test_123',
@@ -56,7 +51,6 @@ class InboundCallFlowTest extends TestCase
         $response->assertHeader('Content-Type', 'application/xml');
 
         $this->assertDatabaseHas('service_jobs', [
-            'tenant_id' => $this->tenant->id,
             'tradie_id' => $this->tradie->id,
             'status'    => 'assigned',
             'source'    => 'forwarded',
@@ -103,7 +97,6 @@ class InboundCallFlowTest extends TestCase
         $this->mockAIProvider();
 
         $call = \App\Domain\Call\Models\Call::factory()->create([
-            'tenant_id'       => $this->tenant->id,
             'tradie_id'       => $this->tradie->id,
             'twilio_call_sid' => 'CC' . str_repeat('c', 32),
             'status'          => 'forwarded',
@@ -129,7 +122,7 @@ class InboundCallFlowTest extends TestCase
         $this->mockAIProvider();
 
         $call = \App\Domain\Call\Models\Call::factory()->create([
-            'tenant_id'     => $this->tenant->id,
+            'tradie_id'     => $this->tradie->id,
             'ai_session_id' => 'retell_call_xyz',
             'status'        => 'ai_handling',
         ]);

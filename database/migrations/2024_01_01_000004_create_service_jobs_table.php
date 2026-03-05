@@ -11,9 +11,9 @@ return new class extends Migration {
         // Note: table name is 'service_jobs' to avoid collision with Laravel's own 'jobs' queue table
         Schema::create('service_jobs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants');
+            $table->uuid('tradie_id');
+            $table->foreign('tradie_id')->references('id')->on('tradies');
             $table->foreignUuid('call_id')->nullable()->constrained('calls')->nullOnDelete();
-            $table->foreignUuid('tradie_id')->nullable()->constrained('tradies')->nullOnDelete();
             $table->string('status', 30)->default('pending');
             $table->string('source', 20)->default('manual');  // manual | ai | forwarded
             $table->string('customer_name')->nullable();
@@ -31,7 +31,6 @@ return new class extends Migration {
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            $table->index(['tenant_id', 'status']);
             $table->index(['tradie_id', 'status']);
         });
     }

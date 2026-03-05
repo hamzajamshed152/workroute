@@ -6,6 +6,7 @@ use App\Domain\AI\Contracts\AIProviderInterface;
 use App\Domain\AI\Services\AIVoiceService;
 use App\Domain\Call\Models\Call;
 use App\Domain\Job\Services\JobService;
+use App\Domain\Tradie\Models\Tradie;
 use App\Domain\Tradie\Services\TradieAvailabilityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,11 +80,19 @@ class RetellWebhookController extends Controller
         $retellCallId = $payload['call_id'];
 
         $call = Call::where('ai_session_id', $retellCallId)->first();
-
         if (! $call) {
             Log::warning('Retell onCallAnalyzed: no call found', ['retell_call_id' => $retellCallId]);
             return response()->json(['status' => 'not_found'], 404);
         }
+        $tradie = Tradie::find($call->tradie_id);
+        if(! $tradie) {
+            Log::warning('Retell onCallAnalyzed: no tradie found', ['tradie_id' => $call->tradie_id]);
+            return response()->json(['status' => 'not_found'], 404);
+        }
+
+        // Track usage — Retell gives duration in seconds, convert to minutes
+        $durationMinutes = (int) ceil(($payload['call']['duration_ms'] ?? 0) / 60000);
+        $tradie->incrementAIMinutes($durationMinutes);
 
         // Don't create duplicate jobs for the same call
         if ($call->job()->exists()) {
@@ -93,7 +102,7 @@ class RetellWebhookController extends Controller
         $details = $this->aiVoiceService->extractJobDetails($payload);
 
         $this->jobService->createFromAICall(
-            $call->tenant_id,
+            $call->tradie_id,
             $call->id,
             $details,
         );

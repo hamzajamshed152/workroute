@@ -39,9 +39,23 @@ class AIVoiceService
     /**
      * Register an inbound call with Retell and get the WebSocket URL for Twilio.
      */
-    public function initiateCallSession(string $agentId, string $callSid, array $metadata = []): RetellCallResponse
+    public function initiateCallSession(Tradie $tradie, string $callSid): RetellCallResponse
     {
-        return $this->provider->registerCall($agentId, $callSid, $metadata);
+        // Check subscription is active
+        if (! $tradie->isSubscriptionActive()) {
+            throw new \RuntimeException('Your subscription is inactive. Please update your billing details.');
+        }
+
+        // Check AI minutes remaining
+        if (! $tradie->hasAIMinutesRemaining()) {
+            throw new \RuntimeException(
+                "Monthly AI minutes limit reached ({$tradie->ai_minutes_limit} mins). Please upgrade your plan."
+            );
+        }
+
+        return $this->provider->registerCall($tradie->retell_agent_id, $callSid, [
+            'tradie_id' => $tradie->id,
+        ]);
     }
 
     /**

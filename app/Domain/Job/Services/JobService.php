@@ -21,14 +21,12 @@ class JobService
      * Status is 'assigned' immediately since the tradie is already on the call.
      */
     public function createFromForwardedCall(
-        string $tenantId,
         string $callId,
         string $tradieId,
         string $callerNumber,
     ): Job {
-        return DB::transaction(function () use ($tenantId, $callId, $tradieId, $callerNumber) {
+        return DB::transaction(function () use ($callId, $tradieId, $callerNumber) {
             $job = new Job([
-                'tenant_id'      => $tenantId,
                 'call_id'        => $callId,
                 'tradie_id'      => $tradieId,
                 'status'         => 'assigned',
@@ -39,8 +37,8 @@ class JobService
 
             $this->jobs->save($job);
 
-            event(new JobCreated($job->id, $tenantId, $tradieId, $callId, 'forwarded', 'assigned'));
-            event(new JobAssigned($job->id, $tenantId, $tradieId));
+            event(new JobCreated($job->id, $tradieId, $callId, 'forwarded', 'assigned'));
+            event(new JobAssigned($job->id, $tradieId));
 
             return $job;
         });
@@ -51,13 +49,13 @@ class JobService
      * Status is 'ai_created' — needs dispatcher review before assignment.
      */
     public function createFromAICall(
-        string           $tenantId,
+        string           $tradieId,
         string           $callId,
         ExtractedJobDetails $details,
     ): Job {
-        return DB::transaction(function () use ($tenantId, $callId, $details) {
+        return DB::transaction(function () use ($tradieId, $callId, $details) {
             $job = new Job([
-                'tenant_id'       => $tenantId,
+                'tradie_id'       => $tradieId,
                 'call_id'         => $callId,
                 'status'          => 'ai_created',
                 'source'          => 'ai',
@@ -72,7 +70,7 @@ class JobService
 
             $this->jobs->save($job);
 
-            event(new JobCreated($job->id, $tenantId, null, $callId, 'ai', 'ai_created'));
+            event(new JobCreated($job->id, $tradieId, null, $callId, 'ai', 'ai_created'));
 
             return $job;
         });
@@ -127,8 +125,8 @@ class JobService
 
         $this->jobs->save($job);
 
-        event(new JobStatusChanged($job->id, $job->tenant_id, $oldStatus, 'assigned'));
-        event(new JobAssigned($job->id, $job->tenant_id, $tradieId));
+        event(new JobStatusChanged($job->id, $tradieId, $oldStatus, 'assigned'));
+        event(new JobAssigned($job->id, $tradieId));
 
         return $job;
     }

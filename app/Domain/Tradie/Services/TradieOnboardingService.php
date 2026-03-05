@@ -33,27 +33,30 @@ class TradieOnboardingService
     {
         return DB::transaction(function () use ($data) {
 
-            // Step 1 — Create tradie record (no number yet)
+            // Create tradie — no tenant_id anymore
             $tradie = new Tradie([
-                'tenant_id'      => $data['tenant_id'],
                 'name'           => $data['name'],
                 'email'          => $data['email'],
                 'password'       => Hash::make($data['password']),
                 'personal_phone' => $data['personal_phone'],
                 'is_available'   => true,
-                'role'           => 'tradie',
                 'skills'         => $data['skills'] ?? [],
                 'timezone'       => $data['timezone'] ?? 'Australia/Sydney',
+                // Start on trial
+                'subscription_status' => 'trialing',
+                'subscription_plan'   => 'solo',
+                'trial_ends_at'       => now()->addDays(14),
+                'ai_minutes_limit'    => 100,   // Solo plan default
+                'usage_reset_at'      => now()->addMonthNoOverflow()->startOfMonth(),
             ]);
 
             $this->tradies->save($tradie);
 
-            event(new TradieRegistered($tradie->id, $tradie->tenant_id, $tradie->email));
+            // No tenant event — just tradie registered
+            event(new TradieRegistered($tradie->id, $tradie->email));
 
-            // Step 2 & 3 — Buy Twilio number and configure webhooks
+            // Provision Twilio number + Retell agent
             $this->provisionPhoneNumber($tradie, $data['area_code'] ?? null);
-
-            // Step 4 — Create Retell AI agent for this tradie
             $this->aiVoiceService->provisionAgentForTradie($tradie);
 
             return $tradie->fresh();
@@ -70,15 +73,15 @@ class TradieOnboardingService
 
         // Purchase the number
         $result = $this->callProvider->purchaseNumber(
-            areaCode:     $areaCode ?? '02',   // Default to Sydney area code
+            areaCode: $areaCode ?? '02',   // Default to Sydney area code
             friendlyName: "Tradie: {$tradie->name}",
         );
 
         // Configure Twilio to send inbound calls and status callbacks to our app
         $this->callProvider->configureNumberWebhooks(
-            numberSid:           $result->numberSid,
-            voiceUrl:            "{$appUrl}/webhooks/call/inbound",
-            statusCallbackUrl:   "{$appUrl}/webhooks/call/status",
+            numberSid: $result->numberSid,
+            voiceUrl: "{$appUrl}/webhooks/call/inbound",
+            statusCallbackUrl: "{$appUrl}/webhooks/call/status",
         );
 
         // Persist the number on the tradie

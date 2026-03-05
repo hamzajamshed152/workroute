@@ -43,9 +43,9 @@ class IncomingCallPipeline
         }
 
         // Persist the call record immediately for idempotency
-        $call = $this->persistCall($data, $tradie->id, $tradie->tenant_id);
+        $call = $this->persistCall($data, $tradie->id);
 
-        event(new CallReceived($call->id, $tradie->tenant_id, $data->callSid, $data->callerNumber, $data->calledNumber));
+        event(new CallReceived($call->id, $tradie->id, $data->callSid, $data->callerNumber, $data->calledNumber));
 
         // Route the call
         $routingResult = $this->routing->routeIncomingCall($data);
@@ -70,12 +70,11 @@ class IncomingCallPipeline
             'tradie_id'    => $tradie->id,
         ]);
 
-        event(new CallForwardedToTradie($call->id, $tradie->tenant_id, $tradie->id, $personalPhone));
+        event(new CallForwardedToTradie($call->id, $tradie->id, $personalPhone));
 
         // Job is created immediately in 'assigned' state
         // If the tradie doesn't answer, the job will be updated via the status callback
         $this->jobService->createFromForwardedCall(
-            $tradie->tenant_id,
             $call->id,
             $tradie->id,
             $call->caller_number,
@@ -92,17 +91,14 @@ class IncomingCallPipeline
     {
         $agentId = $tradie->retell_agent_id;
 
-        $retellResponse = $this->aiVoice->initiateCallSession($agentId, $call->twilio_call_sid, [
-            'tenant_id' => $tradie->tenant_id,
-            'call_id'   => $call->id,
-        ]);
+        $retellResponse = $this->aiVoice->initiateCallSession($tradie, $call->callSid);
 
         $call->update([
             'status'         => 'ai_handling',
             'ai_session_id'  => $retellResponse->retellCallId,
         ]);
 
-        event(new CallHandedToAI($call->id, $tradie->tenant_id, 'tradie_unavailable'));
+        event(new CallHandedToAI($call->id, $tradie->id, 'tradie_unavailable'));
 
         return $this->routing->buildAIHandoffTwiml($retellResponse->webSocketUrl);
     }
@@ -120,7 +116,7 @@ class IncomingCallPipeline
 
         event(new \App\Domain\Call\Events\CallNotAnswered(
             $call->id,
-            $call->tenant_id,
+            $call->tradie_id,
             $call->twilio_call_sid,
             $dialStatus,
         ));
@@ -128,13 +124,12 @@ class IncomingCallPipeline
         return $this->handleAIHandoff($call, $tradie);
     }
 
-    private function persistCall(IncomingCallData $data, string $tradieId, string $tenantId): Call
+    private function persistCall(IncomingCallData $data, string $tradieId): Call
     {
         // Idempotent — if Twilio retries the webhook, we don't create a duplicate
         return Call::firstOrCreate(
             ['twilio_call_sid' => $data->callSid],
             [
-                'tenant_id'     => $tenantId,
                 'tradie_id'     => $tradieId,
                 'caller_number' => $data->callerNumber,
                 'called_number' => $data->calledNumber,
