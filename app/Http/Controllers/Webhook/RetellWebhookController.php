@@ -32,7 +32,12 @@ class RetellWebhookController extends Controller
      */
     public function handle(Request $request): JsonResponse
     {
-        $this->aiProvider->validateWebhookSignature($request);
+        // $this->aiProvider->validateWebhookSignature($request);
+        // Skip signature check in local/testing environment
+        if (! config('services.retell.skip_signature_check')) {
+            $this->aiProvider->validateWebhookSignature($request);
+        }
+
 
         $event   = $request->input('event');
         $payload = $request->input('call', []);

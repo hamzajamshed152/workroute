@@ -15,12 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register named middleware for use in routes
         $middleware->alias([
             'validate.twilio' => \App\Http\Middleware\ValidateTwilioSignature::class,
-            'resolve.tenant'  => \App\Http\Middleware\ResolveTenant::class,
         ]);
 
         // Apply tenant resolution to all authenticated API routes
         $middleware->appendToGroup('api', [
-            \App\Http\Middleware\ResolveTenant::class,
+            // \App\Http\Middleware\ResolveTenant::class,
         ]);
 
         // Exclude webhook routes from CSRF and from general API middleware
