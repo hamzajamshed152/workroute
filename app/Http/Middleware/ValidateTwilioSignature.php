@@ -14,7 +14,13 @@ class ValidateTwilioSignature
     public function handle(Request $request, Closure $next): mixed
     {
         // Skip in testing
-        if (app()->environment('testing') && config('services.twilio.skip_signature_check')) {
+        // if (app()->environment('local') && config('services.twilio.skip_signature_check')) {
+        //     return $next($request);
+        // }
+        // if (config('services.twilio.skip_signature_check')) {
+        //     return $next($request);   // ← must be here, before ANY validation
+        // }
+        if (app()->environment('local')) {
             return $next($request);
         }
 

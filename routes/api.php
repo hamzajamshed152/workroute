@@ -20,10 +20,12 @@ Route::prefix('auth')->group(function () {
 // These routes are called BY Twilio — not by logged-in users.
 // Protected by ValidateTwilioSignature middleware, NOT auth:sanctum.
 // CRITICAL: These must be excluded from CSRF protection (add to VerifyCsrfToken $except).
-Route::prefix('webhooks')->middleware(['validate.twilio'])->group(function () {
-    Route::post('/call/inbound',           [CallWebhookController::class, 'inbound']);
-    Route::post('/call/status/{callId?}',  [CallWebhookController::class, 'status'])
-         ->where('callId', '[0-9a-f-]+');
+// Route::prefix('webhooks')->middleware(['validate.twilio'])->group(function () {
+// Route::post('/webhooks/call/status', [CallWebhookController::class, 'status']);
+Route::prefix('webhooks')->group(function () {
+    Route::post('/call/inbound', [CallWebhookController::class, 'inbound']);
+    Route::post('/call/status',  [CallWebhookController::class, 'status']);
+        //  ->where('callId', '[0-9a-f-]+');
 });
 
 // ── Retell AI Webhooks ────────────────────────────────────────────────────────

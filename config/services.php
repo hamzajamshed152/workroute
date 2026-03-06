@@ -39,6 +39,8 @@ return [
         'sid'                    => env('TWILIO_ACCOUNT_SID'),
         'token'                  => env('TWILIO_AUTH_TOKEN'),
         'skip_signature_check'   => env('TWILIO_SKIP_SIGNATURE_CHECK', false), // true only in local/testing
+        'sip_username'           => env('TWILIO_SIP_USERNAME'),
+        'sip_password'           => env('TWILIO_SIP_PASSWORD'),
     ],
 
     'retell' => [

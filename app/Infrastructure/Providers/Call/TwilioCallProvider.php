@@ -6,6 +6,7 @@ use App\Domain\Call\Contracts\CallProviderInterface;
 use App\Domain\Call\DTOs\IncomingCallData;
 use App\Domain\Call\DTOs\PurchaseNumberResult;
 use App\Domain\Call\DTOs\TwimlResponse;
+use App\Domain\Call\Models\Call;
 use Illuminate\Http\Request;
 use Twilio\Rest\Client as TwilioClient;
 use Twilio\Security\RequestValidator;
@@ -55,14 +56,26 @@ class TwilioCallProvider implements CallProviderInterface
      * Hand the call to Retell AI via Twilio's <Connect><Stream> verb.
      * The WebSocket URL is provided by Retell after registering the call.
      */
-    public function buildAIHandoffResponse(string $retellWebsocketUrl): TwimlResponse
+    // public function buildAIHandoffResponse(string $retellWebsocketUrl): TwimlResponse
+    // {
+    //     $response = new VoiceResponse();
+
+    //     $connect = $response->connect();
+    //     $connect->stream([
+    //         'url'   => $retellWebsocketUrl,
+    //         'track' => 'both',   // Send both caller and agent audio to Retell
+    //     ]);
+
+    //     return new TwimlResponse((string) $response);
+    // }
+    public function buildAIHandoffResponse(string $retellSipUri): TwimlResponse
     {
         $response = new VoiceResponse();
 
-        $connect = $response->connect();
-        $connect->stream([
-            'url'   => $retellWebsocketUrl,
-            'track' => 'both_tracks',   // Send both caller and agent audio to Retell
+        $dial = $response->dial();
+        $dial->sip($retellSipUri, [
+            'username' => config('services.twilio.sip_username'),
+            'password' => config('services.twilio.sip_password'),
         ]);
 
         return new TwimlResponse((string) $response);
@@ -127,12 +140,35 @@ class TwilioCallProvider implements CallProviderInterface
      * Validate the Twilio webhook signature to prevent spoofed requests.
      * This MUST be called before processing any webhook payload.
      */
+    // public function validateWebhookSignature(Request $request): void
+    // {
+    //     $validator = new RequestValidator(config('services.twilio.token'));
+
+    //     $isValid = $validator->validate(
+    //         $request->header('X-Twilio-Signature'),
+    //         $request->fullUrl(),
+    //         $request->post(),
+    //     );
+
+    //     throw_unless($isValid, \Symfony\Component\HttpKernel\Exception\HttpException::class, 403);
+    // }
     public function validateWebhookSignature(Request $request): void
     {
-        $validator = new RequestValidator(config('services.twilio.token'));
+        // Skip if no signature present (local testing)
+        if (config('services.twilio.skip_signature_check')) {
+            return;
+        }
+
+        $signature = $request->header('X-Twilio-Signature');
+
+        if (! $signature) {
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Missing Twilio signature.');
+        }
+
+        $validator = new RequestValidator(config('services.twilio.auth_token'));
 
         $isValid = $validator->validate(
-            $request->header('X-Twilio-Signature'),
+            $signature,
             $request->fullUrl(),
             $request->post(),
         );
