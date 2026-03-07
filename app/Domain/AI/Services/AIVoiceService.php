@@ -5,7 +5,7 @@ namespace App\Domain\AI\Services;
 use App\Domain\AI\Contracts\AIProviderInterface;
 use App\Domain\AI\DTOs\CreateAgentData;
 use App\Domain\AI\DTOs\ExtractedJobDetails;
-// use App\Domain\AI\DTOs\RetellCallResponse;
+use App\Domain\AI\DTOs\RetellCallResponse;
 use App\Domain\Tradie\Models\Tradie;
 
 class AIVoiceService
@@ -39,33 +39,23 @@ class AIVoiceService
     /**
      * Register an inbound call with Retell and get the WebSocket URL for Twilio.
      */
-    public function initiateCallSession(Tradie $tradie, string $callSid, array $metadata = []): string
+    public function initiateCallSession(Tradie $tradie, string $callSid, array $metadata = []): RetellCallResponse
     {
-        // // Check subscription is active
-        // if (! $tradie->isSubscriptionActive()) {
-        //     throw new \RuntimeException('Your subscription is inactive. Please update your billing details.');
-        // }
-
-        // // Check AI minutes remaining
-        // if (! $tradie->hasAIMinutesRemaining()) {
-        //     throw new \RuntimeException(
-        //         "Monthly AI minutes limit reached ({$tradie->ai_minutes_limit} mins). Please upgrade your plan."
-        //     );
-        // }
-
-        // return $this->provider->registerCall($tradie->retell_agent_id, $callSid, [
-        //     'tradie_id' => $tradie->id,
-        // ]);
+        // Check subscription is active
         if (! $tradie->isSubscriptionActive()) {
-            throw new \RuntimeException('Your subscription is inactive.');
+            throw new \RuntimeException('Your subscription is inactive. Please update your billing details.');
         }
 
+        // Check AI minutes remaining
         if (! $tradie->hasAIMinutesRemaining()) {
-            throw new \RuntimeException("Monthly AI minutes limit reached.");
+            throw new \RuntimeException(
+                "Monthly AI minutes limit reached ({$tradie->ai_minutes_limit} mins). Please upgrade your plan."
+            );
         }
 
-        // SIP approach — no API call needed, just return the SIP URI
-        return $this->provider->getSipUri();
+        return $this->provider->registerCall($tradie->retell_agent_id, $callSid, [
+            'tradie_id' => $tradie->id,
+        ]);
     }
 
     /**

@@ -87,38 +87,23 @@ class IncomingCallPipeline
      * AI handoff path: no tradie available.
      * Registers the call with Retell and returns the WebSocket TwiML.
      */
-    // private function handleAIHandoff(Call $call, $tradie): TwimlResponse
-    // {
-    //     $agentId = $tradie->retell_agent_id;
-
-    //     $retellResponse = $this->aiVoice->initiateCallSession($tradie, $call->callSid);
-
-    //     $call->update([
-    //         'status'         => 'ai_handling',
-    //         'ai_session_id'  => $retellResponse->retellCallId,
-    //     ]);
-
-    //     event(new CallHandedToAI($call->id, $tradie->id, 'tradie_unavailable'));
-
-    //     return $this->routing->buildAIHandoffTwiml($retellResponse->webSocketUrl);
-    // }
-
     private function handleAIHandoff(Call $call, $tradie): TwimlResponse
     {
-        // Returns SIP URI string now, not RetellCallResponse object
-        $sipUri = $this->aiVoice->initiateCallSession($tradie, $call->twilio_call_sid);
+        $retellResponse = $this->aiVoice->initiateCallSession($tradie, $call->twilio_call_sid);
 
         $call->update([
-            'status' => 'ai_handling',
-            // No ai_session_id here anymore — Retell sends it via webhook after call
+            'status'        => 'ai_handling',
+            'ai_session_id' => $retellResponse->retellCallId,
         ]);
 
         event(new CallHandedToAI($call->id, $tradie->id, 'tradie_unavailable'));
 
-        Log::info('AI Handoff TwiML SIP', ['sip_uri' => $sipUri]);
+        Log::info('AI Handoff TwiML SIP', ['sip_uri' => $retellResponse->webSocketUrl]);
 
-        return $this->routing->buildAIHandoffTwiml($sipUri);
+        return $this->routing->buildAIHandoffTwiml($retellResponse->webSocketUrl);
     }
+
+
 
     /**
      * Called from the status callback webhook when a forwarded call is not answered.

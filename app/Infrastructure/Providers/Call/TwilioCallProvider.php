@@ -80,7 +80,7 @@ class TwilioCallProvider implements CallProviderInterface
 
         return new TwimlResponse((string) $response);
     }
-
+    
     /**
      * Fallback TwiML when a forwarded call is not answered.
      * Redirects to the AI handler endpoint.

@@ -112,7 +112,9 @@ class CallRoutingService
      */
     public function buildForwardTwiml(Call $call, string $personalPhone, string $appBaseUrl): TwimlResponse
     {
-        $statusCallbackUrl = "{$appBaseUrl}/api/webhooks/call/status";
+        // Add rtrim to remove trailing slash from APP_URL
+        $statusCallbackUrl = rtrim($appBaseUrl, '/') . '/api/webhooks/call/status';
+
         return $this->provider->buildForwardResponse($personalPhone, $statusCallbackUrl);
     }
 

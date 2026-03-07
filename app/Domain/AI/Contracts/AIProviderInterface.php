@@ -27,7 +27,10 @@ interface AIProviderInterface
      * Register an inbound call with Retell to get a WebSocket URL.
      * This URL is fed back to Twilio via TwiML <Stream> to connect the call to the AI.
      */
-    public function getSipUri(): string;
+    public function registerCall(string $agentId, string $callSid, array $metadata = []): RetellCallResponse;
+
+
+    public function getSipUri(string $agentId): string;
 
     /**
      * Validate that an inbound webhook genuinely came from Retell.

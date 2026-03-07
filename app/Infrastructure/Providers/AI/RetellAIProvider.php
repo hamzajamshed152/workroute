@@ -61,40 +61,55 @@ class RetellAIProvider implements AIProviderInterface
      * Register the inbound call with Retell.
      * Returns a WebSocket URL that Twilio streams the call audio to.
      */
-    // public function registerCall(string $agentId, string $callSid, array $metadata = []): RetellCallResponse
+    public function registerCall(string $agentId, string $callSid, array $metadata = []): RetellCallResponse
+    {
+        $response = Http::withHeaders($this->headers())
+            ->post("{$this->baseUrl}/v2/register-phone-call", [
+                'agent_id'                 => $agentId,
+                'audio_websocket_protocol' => 'twilio',
+                'audio_encoding'           => 'mulaw',
+                'sample_rate'              => 8000,
+                'metadata'                 => array_merge($metadata, ['twilio_call_sid' => $callSid]),
+            ]);
+
+        throw_unless($response->successful(), \RuntimeException::class,
+            'Failed to register call with Retell: ' . $response->body());
+
+        Log::info('Retell call registered', [
+            'call_id'     => $response->json('call_id'),
+            'call_status' => $response->json('call_status'),
+            'full_body'   => $response->json(),
+        ]);
+
+        $callId = $response->json('call_id');
+
+        // WebSocket URL is constructed from call_id — not returned directly by the API
+        // $webSocketUrl = "wss://api.retellai.com/audio-websocket/{$callId}?api_key=" . config('services.retell.api_key');
+
+        $sipUri = "sip:{$callId}@sip.retellai.com";
+
+        return new RetellCallResponse(
+            retellCallId: $callId,
+            // webSocketUrl: $webSocketUrl,
+            webSocketUrl: $sipUri,
+        );
+    }
+
+    // public function getSipUri(string $agentId): string
     // {
-    //     $response = Http::withHeaders($this->headers())
-    //         ->post("{$this->baseUrl}/v2/register-phone-call", [
-    //             'agent_id'                 => $agentId,
-    //             'audio_websocket_protocol' => 'twilio',
-    //             'audio_encoding'           => 'mulaw',
-    //             'sample_rate'              => 8000,
-    //             'metadata'                 => array_merge($metadata, ['twilio_call_sid' => $callSid]),
-    //         ]);
-
-    //     throw_unless($response->successful(), \RuntimeException::class,
-    //         'Failed to register call with Retell: ' . $response->body());
-
-    //     Log::info('Retell call registered', [
-    //         'call_id'     => $response->json('call_id'),
-    //         'call_status' => $response->json('call_status'),
-    //         'full_body'   => $response->json(),
-    //     ]);
-
-    //     $callId = $response->json('call_id');
-
-    //     // WebSocket URL is constructed from call_id — not returned directly by the API
-    //     $webSocketUrl = "wss://api.retellai.com/audio-websocket/{$callId}?api_key=" . config('services.retell.api_key');
-
-    //     return new RetellCallResponse(
-    //         retellCallId: $callId,
-    //         webSocketUrl: $webSocketUrl,
-    //     );
+    //     // Retell requires agent_id as the SIP user part
+    //     return "sip:{$agentId}@sip.retellai.com";
     // }
 
-    public function getSipUri(): string
+    // public function getSipUri(string $agentId): string
+    // {
+    //     $host = config('services.retell.sip_host', 'sip.retellai.com');
+    //     return "sip:{$agentId}@{$host}";
+    // }
+
+    public function getSipUri(string $agentId): string
     {
-        return config('services.retell_sip_uri');
+        return "sip:{$agentId}@sip.retellai.com";
     }
 
     /**

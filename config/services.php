@@ -45,6 +45,7 @@ return [
 
     'retell' => [
         'api_key'        => env('RETELL_API_KEY'),
+        'sip_host'       => env('RETELL_SIP_URI', 'sip.retellai.com'),
         'default_voice'  => env('RETELL_DEFAULT_VOICE', '11labs-Adrian'),
         'skip_signature_check'   => env('RETELL_SKIP_SIGNATURE_CHECK', false), // true only in local/testing
     ],
